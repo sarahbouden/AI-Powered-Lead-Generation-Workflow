@@ -52,11 +52,11 @@
           "parameters": [
             {
               "name": "key",
-              "value": "AIzaSyDWzLccy5SWfa-i85eDFZGpF2-fkpwT0to"
+              "value": "key"
             },
             {
               "name": "cx",
-              "value": "61b2d58e794d943c1"
+              "value": "cx"
             },
             {
               "name": "q",
@@ -267,7 +267,7 @@
       "name": "Add to Google",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "VWUDAHkkf8iMs6iG",
+          "id": "api",
           "name": "Google Sheets account"
         }
       }
@@ -376,7 +376,7 @@
       "name": "Groq Chat Model",
       "credentials": {
         "groqApi": {
-          "id": "xxCIqtj2Y99VBP8W",
+          "id": "api",
           "name": "Groq account"
         }
       }
@@ -407,7 +407,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer 0063bbf74d884b3fac3ac6858eb486ac"
+              "value": "Bearer x"
             }
           ]
         },
@@ -665,7 +665,7 @@
             },
             {
               "name": "api_key",
-              "value": "3a544b3709ff98edd1f5151d2fedef6977b1cf468160afed95522277f220b78a"
+              "value": "api_key"
             },
             {
               "name": "no_autocorrect",
@@ -724,7 +724,7 @@
       "name": "Groq Chat Model1",
       "credentials": {
         "groqApi": {
-          "id": "xxCIqtj2Y99VBP8W",
+          "id": "api",
           "name": "Groq account"
         }
       }
