@@ -1,0 +1,975 @@
+{
+  "name": "Lead generation final",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -3232,
+        672
+      ],
+      "id": "66a69b6e-acae-4a77-806b-6b4548d28355",
+      "name": "When chat message received",
+      "webhookId": "c75fc8db-4a21-4ea1-8e8e-56c5a8e95f1b"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cc27b2d9-8de7-43ca-a741-2d150084f78e",
+              "name": "currentStartIndex",
+              "value": 1,
+              "type": "number"
+            },
+            {
+              "id": "fc552c57-4510-4f04-aa09-2294306d0d9f",
+              "name": "maxPages",
+              "value": 10,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3040,
+        672
+      ],
+      "id": "1858236f-6e4d-4e8a-b343-65a3320e42ce",
+      "name": "Set Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyDWzLccy5SWfa-i85eDFZGpF2-fkpwT0to"
+            },
+            {
+              "name": "cx",
+              "value": "61b2d58e794d943c1"
+            },
+            {
+              "name": "q",
+              "value": "CEO if IT startup in Tunisia site:linkedin.com/in"
+            },
+            {
+              "name": "start",
+              "value": "={{ $runIndex == 0 ? $node[\"Set Fields\"].json.currentStartIndex : $node[\"Pagination Check\"].json.startIndex }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2864,
+        672
+      ],
+      "id": "5bb770e5-c2a2-4fbf-a4bf-e83dded6b0bb",
+      "name": "Search Google"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the response data\nconst response = $input.first().json;\nconst items = response.items || [];\n\n// Track pagination info\nlet nextStartIndex = 1;\nif (response.queries && response.queries.nextPage && response.queries.nextPage[0]) {\n  nextStartIndex = response.queries.nextPage[0].startIndex;\n}\n\n// Calculate if we should continue (Google only allows up to 100 results)\nconst hasMoreResults = nextStartIndex <= 100;\n\n// Process the items and include pagination info in each item\nconst results = items.map(item => {\n  const titleParts = item.title.split(\" - \");\n  const rawName = titleParts[0] || \"\";\n\n  // Clean and split name\n  const nameCleaned = rawName.split(\"|\")[0].trim(); // removes anything after |\n  const nameParts = nameCleaned.split(\" \");\n  const firstName = nameParts[0] || \"\";\n  const lastName = nameParts.slice(1).join(\" \") || \"\";\n\n  return {\n    name: nameCleaned,\n    firstName: firstName,\n    lastName: lastName,\n    title: titleParts.slice(1).join(\" - \") || null,\n    link: item.link || null,\n    snippet: item.snippet || null,\n    image: item.pagemap?.cse_thumbnail?.[0]?.src || null,\n    startIndex: nextStartIndex,\n    hasMoreResults: hasMoreResults\n  };\n});\n\n// If there are no results, return at least one item with pagination info\nif (results.length === 0) {\n  return [{\n    json: {\n      name: null,\n      firstName: null,\n      lastName: null,\n      title: null,\n      link: null,\n      snippet: null,\n      image: null,\n      startIndex: nextStartIndex,\n      hasMoreResults: false\n    }\n  }];\n}\n\n// Return the processed results\nreturn results.map(r => ({ json: r }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2688,
+        672
+      ],
+      "id": "257253c8-1f4b-4295-a461-8e9863ed43fa",
+      "name": "Extract Results"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1zzFkhGJtGPNj1w7My8ktp50dkhKfMfOzd8iOHxCPejI",
+          "mode": "list",
+          "cachedResultName": "linkedln",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zzFkhGJtGPNj1w7My8ktp50dkhKfMfOzd8iOHxCPejI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zzFkhGJtGPNj1w7My8ktp50dkhKfMfOzd8iOHxCPejI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Extract Results').item.json.name }}",
+            "title": "={{ $('Extract Results').item.json.title }}",
+            "link": "={{ $('Extract Results').item.json.link }}",
+            "index": "={{ $('Search Google').item.json.queries.request[0].startIndex }}",
+            "results": "={{ $('Extract Results').item.json.hasMoreResults }}",
+            "First Name": "={{ $('Extract Results').item.json.firstName }}",
+            "Last Name": "={{ $('Extract Results').item.json.lastName }}",
+            "Company": "={{ $('AI Agent').item.json.output }}",
+            "Company's url": "={{ $('AI Agent1').item.json.company_url }}",
+            "Company Overview": "={{ $json.answer }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "First Name",
+              "displayName": "First Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Name",
+              "displayName": "Last Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "link",
+              "displayName": "link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company's url",
+              "displayName": "Company's url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company Overview",
+              "displayName": "Company Overview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone number",
+              "displayName": "Phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "index",
+              "displayName": "index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "results",
+              "displayName": "results",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -224,
+        608
+      ],
+      "id": "c10701b8-2c24-434b-b98a-a076376a69de",
+      "name": "Add to Google",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VWUDAHkkf8iMs6iG",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\nlet nextStartIndex = 1;\nlet hasMoreResults = false;\n\nif (inputItems?.length) {\n  const first = inputItems[0].json || {};\n  \n  // Get current start index or index\n  const idx = Number(first.startIndex ?? first.index ?? 1);\n  \n  // Increment by 10 for next page\n  nextStartIndex = idx + 10;\n  \n  // Continue loop if we're not past Google's limit\n  hasMoreResults = nextStartIndex <= 100 && (first.hasMoreResults ?? true);\n}\n\nreturn {\n  json: {\n    continueLoop: hasMoreResults,\n    startIndex: nextStartIndex\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        656
+      ],
+      "id": "ce1f797f-c104-4b76-987b-806b1d68da25",
+      "name": "Pagination"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "faef2862-80a4-465b-9e0b-be5b9753dcbd",
+              "leftValue": "={{ $json.continueLoop }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        848
+      ],
+      "id": "264a3f01-fdb1-4e90-9b55-ca0167c26740",
+      "name": "Pagination Check"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -464,
+        608
+      ],
+      "id": "becaf7a6-8332-48f3-baf0-4c682c5a4886",
+      "name": "Wait",
+      "webhookId": "d3bbbd53-2135-45e5-a847-aad35b1c518e"
+    },
+    {
+      "parameters": {
+        "content": "## Google API Instructions\n\n1. Go to [Google Cloud Console](https://console.cloud.google.com/)\n   - Create a new project  \n   - Enable **Custom Search API**  \n   - Go to **Credentials** and copy your **API Key**\n\n2. Go to [Programmable Search Engine](https://programmablesearchengine.google.com/controlpanel/create)\n   - Create a name  \n   - Select **Search entire web**  \n   - Copy the **cx** value\n\n## Usage Limits (Free Tier)\n\n- The free tier of the Google Custom Search API allows **100 requests per day**\n- Each request returns **up to 10 search results**\n- This means you can get **up to 1,000 search results per day** at no cost\n",
+        "height": 500,
+        "width": 360,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3792,
+        480
+      ],
+      "id": "e00682e3-6710-4cbe-b8e1-dee857530ac5",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a data extraction assistant. Your goal is to extract the company or product where a person is currently working. You have two sources:\n\n1. Job title: {{ $json.title }}\n2. Snippet: {{ $json.snippet }}\nRules:\n1. Prefer the company/product mentioned in the job title. If the title clearly indicates a company (e.g., \"CEO of INVEST'i\"), return that company.\n2. If the title does not contain a company name, try to extract the company from the snippet. Focus on phrases like \"CEO of\", \"founder of\", \"co-founder at\".\n3. Ignore organizations, programs, or supporting entities that are not directly tied to the person's current role.\n4. If multiple companies are mentioned, select only the one directly linked to the person’s current role.\n5. Output only the company/product name as plain text. Do not include any other text.\n6. If unsure, return an empty string.\n7.most importantly only output the company's name in plain text, do not explain the logic\n\nSnippet:\n{{ $json.snippet }}\n\nJob title:\n{{ $json.title }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -2096,
+        608
+      ],
+      "id": "e17d2b06-d662-4f1a-b11e-bc9ad482ead0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -2192,
+        816
+      ],
+      "id": "0bfae2af-1346-4a6a-bfd3-ece24dae7d46",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "xxCIqtj2Y99VBP8W",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "\thttps://api.developers.kaspr.io/profile/linkedin",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ $('Code').item.json.linkedin_id }}"
+            },
+            {
+              "name": "name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "company_name",
+              "value": "={{ $('AI Agent').item.json.output }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 0063bbf74d884b3fac3ac6858eb486ac"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "id",
+              "value": "={{ $('Code').item.json.linkedin_id }}"
+            },
+            {
+              "name": "name",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "company_name",
+              "value": "={{ $('AI Agent').item.json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        608
+      ],
+      "id": "4c6166d4-bece-42a7-a3ab-fb83f71d467b",
+      "name": "Fallback Phone",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all items\nreturn $input.all().map(item => {\n  const profile = item.json.profile || {};\n  \n  // Phone parsing\n  let phone = '';\n  if (profile.phone) {\n    phone = profile.phone;\n  } else if (Array.isArray(profile.phones) && profile.phones.length > 0) {\n    phone = profile.phones[0];\n  }\n\n  // Email parsing\n  let email = '';\n  if (profile.professionalEmail) {\n    email = profile.professionalEmail;\n  } else if (Array.isArray(profile.professionalEmails) && profile.professionalEmails.length > 0) {\n    email = profile.professionalEmails[0];\n  } else if (Array.isArray(profile.emails) && profile.emails.length > 0 && profile.emails[0].email) {\n    email = profile.emails[0].email;\n  }\n\n  return {\n    json: {\n      phone,\n      email\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        608
+      ],
+      "id": "99af275d-51e0-4a2d-bd02-9c49ecc30474",
+      "name": "Parse Fallback Phone",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1zzFkhGJtGPNj1w7My8ktp50dkhKfMfOzd8iOHxCPejI",
+          "mode": "list",
+          "cachedResultName": "linkedln",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zzFkhGJtGPNj1w7My8ktp50dkhKfMfOzd8iOHxCPejI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zzFkhGJtGPNj1w7My8ktp50dkhKfMfOzd8iOHxCPejI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone number": "={{ $json.phone }}",
+            "First Name": "=",
+            "row_number": 0,
+            "name": "={{ $('Extract Results').item.json.name }}",
+            "email": "={{ $json.email }}"
+          },
+          "matchingColumns": [
+            "name"
+          ],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "First Name",
+              "displayName": "First Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Name",
+              "displayName": "Last Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "link",
+              "displayName": "link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image",
+              "displayName": "image",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company's url",
+              "displayName": "Company's url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone number",
+              "displayName": "Phone number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "index",
+              "displayName": "index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "results",
+              "displayName": "results",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        848,
+        608
+      ],
+      "id": "1874535b-239c-46bd-ad39-ce5567d1d46c",
+      "name": "Update Phone",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VWUDAHkkf8iMs6iG",
+          "name": "Google Sheets account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all incoming items\nconst items = $input.all();\n\n// Process each item\nreturn items.map(item => {\n  const url = item.json.linkedin_url || item.json[\"link\"] || \"\";\n  \n  // Extract the part after \"/in/\" and before the next slash (if any)\n  const match = url.match(/linkedin\\.com\\/in\\/([^\\/]+)/i);\n  \n  // If match found, take first group as the LinkedIn ID\n  const linkedinId = match ? match[1] : null;\n  \n  return {\n    json: {\n      ...item.json,\n      linkedin_id: linkedinId\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2400,
+        672
+      ],
+      "id": "5d00d9f1-53df-4377-a28c-1a45f724a8e8",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.output }} official site"
+            },
+            {
+              "name": "google_domain",
+              "value": "google.com"
+            },
+            {
+              "name": "api_key",
+              "value": "3a544b3709ff98edd1f5151d2fedef6977b1cf468160afed95522277f220b78a"
+            },
+            {
+              "name": "no_autocorrect",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1648,
+        592
+      ],
+      "id": "4a144683-0011-4d2f-ac49-cba5b3e26093",
+      "name": "Search Comany url"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -2032,
+        832
+      ],
+      "id": "88812ad8-d6d4-4317-9609-fae7d6ee7c44",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI assistant. Your job is to choose the single most accurate official website URL for a company.\n\nYou are given:\n\nCompany name: {{ $('AI Agent').item.json.output }}\nCompany's CEO description/snippet: {{ $('Extract Results').item.json.snippet }}\nCandidate links (Each candidate has a title, a URL, and a snippet):{{ $json.organic_results[0] }}\n\nTask:\n\nCarefully compare each candidate (title + URL + snippet) against the company name and description.\n\nSelect the single most relevant official website of the company.\n\nPrefer the company’s homepage if available.\n\nThe URL must clearly match the company name/description.\n\nIf none of the candidates match, return nothing at all. Do not guess, do not create new links.\n\n⚠️ Output rules (must follow exactly):\n\nOutput ONLY the correct URL.\n\nNo reasoning, no explanations, no markdown.\n\nNo JSON or key–value pairs.\n\nDo not add or modify anything in the URL.\n\nIf no match, return an empty output.\n\n✅ Correct example:\nhttps://curebionics.com/\n\n❌ Wrong examples:\n\n\"The best match is https://curebionics.com/\n\"\n\n{\"url\": \"https://curebionics.com/\"}\n\ncurebionics.com (missing https://)",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -1440,
+        592
+      ],
+      "id": "d2de591b-e665-4eba-a27c-64d6d5989aa3",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        768
+      ],
+      "id": "28220117-d7b7-4580-bb5b-e681f6f29071",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "xxCIqtj2Y99VBP8W",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-bcbe5a.stack.tryrelevance.com/latest/studios/d1857b4b-da61-45b1-a9dc-e36561cd3fa4/trigger_webhook?project=07a26e886a8c-479b-8267-800772a68380",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"company_url\":\"{{ $json.output }}\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1024,
+        576
+      ],
+      "id": "5b53abcb-d4b6-4c73-baca-140842d470cd",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Set Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fields": {
+      "main": [
+        [
+          {
+            "node": "Search Google",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Google": {
+      "main": [
+        [
+          {
+            "node": "Extract Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Results": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add to Google": {
+      "main": [
+        [
+          {
+            "node": "Fallback Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pagination": {
+      "main": [
+        [
+          {
+            "node": "Pagination Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pagination Check": {
+      "main": [
+        [
+          {
+            "node": "Search Google",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Add to Google",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Search Comany url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback Phone": {
+      "main": [
+        [
+          {
+            "node": "Parse Fallback Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Fallback Phone": {
+      "main": [
+        [
+          {
+            "node": "Update Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Phone": {
+      "main": [
+        [
+          {
+            "node": "Pagination",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Comany url": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        []
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b574ca2b-1411-4ec2-a06b-4b92a29827f0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dde1f832a03106cb9a291639928e3573ad127c1b60459dd00beec6cd15070a28"
+  },
+  "id": "9gqZfeMlS04BjQDS",
+  "tags": [
+    {
+      "createdAt": "2025-08-05T17:43:16.803Z",
+      "updatedAt": "2025-08-05T17:43:16.803Z",
+      "id": "vRnXRg63UHCHApoH",
+      "name": "youtube"
+    }
+  ]
+}
