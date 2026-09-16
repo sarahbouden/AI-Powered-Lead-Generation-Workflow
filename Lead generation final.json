@@ -961,7 +961,7 @@
   "versionId": "b574ca2b-1411-4ec2-a06b-4b92a29827f0",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "dde1f832a03106cb9a291639928e3573ad127c1b60459dd00beec6cd15070a28"
+    "instanceId": "YOUR_SERPAPI_KEY"
   },
   "id": "9gqZfeMlS04BjQDS",
   "tags": [
